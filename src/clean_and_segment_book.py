@@ -22,10 +22,10 @@ USAGE_STR = """
 
 # Example 
 INPUT_FILE="/afs/ir.stanford.edu/users/a/k/akma327/cs224n/project/data/raw-book-files/ESFJ/ESFJ_AndrewCarnegie_Autobiography.txt"
-OUTPUT_FILE="/afs/ir.stanford.edu/users/a/k/akma327/cs224n/project/data/cleaned-segmented-files/ESFJESFJ_AndrewCarnegie_Autobiography.txt"
+OUTPUT_FILE="/afs/ir.stanford.edu/users/a/k/akma327/cs224n/project/data/cleaned-segmented-files/ESFJ/ESFJ_AndrewCarnegie_Autobiography.txt"
 python clean_and_segment_book.py $INPUT_FILE $OUTPUT_FILE
 
-python clean_and_segment_book.py /afs/ir.stanford.edu/users/a/k/akma327/cs224n/project/data/raw-book-files/ESFJ/ESFJ_AndrewCarnegie_Autobiography.txt /afs/ir.stanford.edu/users/a/k/akma327/cs224n/project/data/cleaned-segmented-files/ESFJESFJ_AndrewCarnegie_Autobiography.txt
+python clean_and_segment_book.py /afs/ir.stanford.edu/users/a/k/akma327/cs224n/project/data/raw-book-files/ESFJ/ESFJ_AndrewCarnegie_Autobiography.txt /afs/ir.stanford.edu/users/a/k/akma327/cs224n/project/data/cleaned-segmented-files/ESFJ/ESFJ_AndrewCarnegie_Autobiography.txt
 
 """
 
@@ -74,7 +74,7 @@ def remove_outlier_strings(input_str):
 	return " ".join(filtered_words)
 
 
-def segment_sentences(input_str, CHUNK_SIZE=DEFAULT_CHUNK_SIZE):
+def filter_sentences(input_str):
 	"""
 		Splits upon punctuation and segments into sentence chunks. 
 	"""
@@ -84,15 +84,39 @@ def segment_sentences(input_str, CHUNK_SIZE=DEFAULT_CHUNK_SIZE):
 
 	print(input_str)
 	sentences = input_str.split(".")
+	filtered_sentences = []
+	for s in sentences:
+		words = s.split(" ")
+		num_words = len(words)
+		if(num_words > 4 and num_words < 70):
+			filtered_sentences.append(" ".join(words))
 
-	# for s in sentences:
-	# 	words = s.split(" ")
-	# 	num_words = len(words)
-	# 	if(num_words > 4 and num_words < 70):
-	# 		print(words)
+	return filtered_sentences
 
 
 
+
+def chunk_sentences(filtered_sentences, CHUNK_SIZE=DEFAULT_CHUNK_SIZE):
+	"""
+		Group sentences of CHUNK_SIZE and output the concatenated string. 
+	"""
+
+	sentence_chunks = []
+	while filtered_sentences:
+		chunk = filtered_sentences[:CHUNK_SIZE]
+		filtered_sentences = filtered_sentences[CHUNK_SIZE:]
+		sentence_chunks.append(".".join(chunk) + ".\n")
+	return sentence_chunks
+
+
+def write_output(sentence_chunks, OUTPUT_FILE):
+	"""
+		Write to output file
+	"""
+	MBTI, AUTHOR, TITLE = OUTPUT_FILE.strip().split("/")[-1].strip(".txt").split("_")
+	f = open(OUTPUT_FILE, 'w')
+	for chunk in sentence_chunks:
+		f.write(MBTI + "\t" + AUTHOR + "\t" + TITLE + "\t" + chunk + "\n")
 
 
 
@@ -112,7 +136,9 @@ def process_book(INPUT_FILE, OUTPUT_FILE, CHUNK_SIZE=DEFAULT_CHUNK_SIZE):
 
 	processed_str = strip_numerics_special_chars(input_str)
 	processed_str = remove_outlier_strings(processed_str)
-	segment_sentences(processed_str, CHUNK_SIZE)
+	filtered_sentences = filter_sentences(processed_str)
+	sentence_chunks = chunk_sentences(filtered_sentences, CHUNK_SIZE)
+	write_output(sentence_chunks, OUTPUT_FILE)
 
 
 if __name__ == "__main__":
