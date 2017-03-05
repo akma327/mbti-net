@@ -60,6 +60,7 @@ def remove_outlier_strings(input_str):
 		Removes long strings that may associate with URLs rather than actual text. 
 		Also discard "words" that are a combination of floating punctuations. 
 	"""
+	dictionary = set([word.strip() for word in open('/usr/share/dict/words', 'r')])
 	words = input_str.split(" ")
 	filtered_words = []
 	for w in words:
@@ -69,6 +70,7 @@ def remove_outlier_strings(input_str):
 		if(".." in w or ".," in w or ",." in w or  "..." in w): continue
 		if("Gutenberg" in w or "gutenberg" in w): continue
 		if(".org" in w or ".com" in w): continue
+		if w not in dictionary: continue
 		filtered_words.append(w)
 
 	return " ".join(filtered_words)
