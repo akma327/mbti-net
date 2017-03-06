@@ -63,13 +63,12 @@ def remove_outlier_strings(input_str, dictionary):
 	words = input_str.split(" ")
 	filtered_words = []
 	for w in words:
-
 		if(w == "" or w == "."): continue 
 		if("www" in w or "http" in w): continue 
 		if(".." in w or ".," in w or ",." in w or  "..." in w): continue
 		if("Gutenberg" in w or "gutenberg" in w): continue
 		if(".org" in w or ".com" in w): continue
-		if w not in dictionary: continue
+		if(w.strip(".?!").lower() not in dictionary): continue
 		filtered_words.append(w)
 
 	return " ".join(filtered_words)
