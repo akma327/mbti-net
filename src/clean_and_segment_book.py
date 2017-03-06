@@ -50,7 +50,7 @@ def strip_numerics_special_chars(input_str):
 			processed_str.append(c)
 	return "".join(processed_str)
 
-def remove_outlier_strings(input_str):
+def remove_outlier_strings(input_str, dictionary):
 	"""
 		Split upon spaces to get individual "words" and get rid of following
 			- Empty strings 
@@ -60,7 +60,6 @@ def remove_outlier_strings(input_str):
 		Removes long strings that may associate with URLs rather than actual text. 
 		Also discard "words" that are a combination of floating punctuations. 
 	"""
-	dictionary = set([word.strip() for word in open('/usr/share/dict/words', 'r')])
 	words = input_str.split(" ")
 	filtered_words = []
 	for w in words:
@@ -122,7 +121,7 @@ def write_output(sentence_chunks, OUTPUT_FILE):
 
 
 
-def process_book(INPUT_FILE, OUTPUT_FILE, CHUNK_SIZE=DEFAULT_CHUNK_SIZE):
+def process_book(INPUT_FILE, OUTPUT_FILE, dictionary, CHUNK_SIZE=DEFAULT_CHUNK_SIZE):
 	"""
 		Cleaning: 
 			- Strips table of content
@@ -137,7 +136,7 @@ def process_book(INPUT_FILE, OUTPUT_FILE, CHUNK_SIZE=DEFAULT_CHUNK_SIZE):
 		input_str += " " + line.strip()
 
 	processed_str = strip_numerics_special_chars(input_str)
-	processed_str = remove_outlier_strings(processed_str)
+	processed_str = remove_outlier_strings(processed_str, dictionary)
 	filtered_sentences = filter_sentences(processed_str)
 	sentence_chunks = chunk_sentences(filtered_sentences, CHUNK_SIZE)
 	write_output(sentence_chunks, OUTPUT_FILE)
@@ -154,5 +153,6 @@ if __name__ == "__main__":
 	if(num_args == 4):
 		CHUNK_SIZE = int(sys.argv[3])
 
-	process_book(INPUT_FILE, OUTPUT_FILE, CHUNK_SIZE)
+	dictionary = set([word.strip() for word in open('/usr/share/dict/words', 'r')])
+	process_book(INPUT_FILE, OUTPUT_FILE, dictionary, CHUNK_SIZE)
 
