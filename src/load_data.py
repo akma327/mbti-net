@@ -4,6 +4,7 @@
 
 import os
 import sys
+import numpy as np 
 
 USAGE_STR = """
 
@@ -30,7 +31,7 @@ def load_data(DATA_FILE, PERCENTAGE_TRAIN=0.7):
 	for line in f:
 		linfo = line.strip().split("\t")
 		mbti, sentence_str = linfo[0], linfo[3]
-		mbti_one_hot = [0]*16
+		mbti_one_hot = np.array([0.0]*16)
 		mbti_one_hot[mbti_index[mbti]] = 1
 
 		sentence_str = sentence_str.replace(".", " ").lower()
