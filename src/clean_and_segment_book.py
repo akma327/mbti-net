@@ -83,7 +83,6 @@ def filter_sentences(input_str):
 	input_str = input_str.replace("?", ".")
 	input_str = input_str.replace("!", ".")
 
-	print(input_str)
 	sentences = input_str.split(".")
 	filtered_sentences = []
 	for s in sentences:
