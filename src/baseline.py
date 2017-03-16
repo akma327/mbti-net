@@ -4,12 +4,37 @@ import tensorflow as tf
 import numpy as np
 from load_data import *
 from glove import *
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt 
 
 USAGE_STR = """
 
 python baseline.py /afs/ir.stanford.edu/users/a/k/akma327/cs224n/project/mbti-net/data/mbti_shuffled_data.txt 0.1
 
 """
+
+def show_values(pc, fmt="%.2f", **kw):
+    from itertools import izip
+    pc.update_scalarmappable()
+    ax = pc.get_axes()
+    for p, color, value in izip(pc.get_paths(), pc.get_facecolors(), pc.get_array()):
+        x, y = p.vertices[:-2, :].mean(0)
+        if np.all(color[:3] > 0.5):
+            color = (0.0, 0.0, 0.0)
+        else:
+            color = (1.0, 1.0, 1.0)
+        ax.text(x, y, fmt % value, ha="center", va="center", color=color, **kw)
+
+
+mbti_index = {"ISTJ" : 0, "ISFJ" :1, "INFJ" :2, "INTJ" :3, "ISTP" :4, "ISFP" : 5, "INFP":6, "INTP":7, "ESTP": 8, "ESFP":9, "ENFP":10, "ENTP":11, "ESTJ":12, "ESFJ":13, "ENFJ":14, "ENTJ":15}
+d = {}
+for key in mbti_index:
+    d[mbti_index[key]] = key
+
+mbti_labels = []
+for i in range(16):
+    mbti_labels.append(d[i])
+
 
 GLOVE_DIMENSION = 50
 
@@ -119,6 +144,39 @@ def main(DATA_FILE, PERCENTAGE_TRAIN):
                                  sess.run(predict, feed_dict={x: train_X, y: train_y}))
         test_accuracy  = np.mean(np.argmax(test_y, axis=1) ==
                                  sess.run(predict, feed_dict={x: test_X, y: test_y}))
+        preds = sess.run(predict, feed_dict={x: test_X, y: test_y})
+        labels = []
+        for i in range(len(test_y)):
+            for j in range(len(test_y[i])):
+                if test_y[i][j] == 1:
+                    labels.append(j)
+                    break
+        print np.array(labels), np.array(preds)
+        cm = np.array([row / float(np.sum(row)) for row in confusion_matrix(np.array(labels), np.array(preds))])
+
+    
+        ### Display confusion matrix
+        print("Confusion Matrix for Epoch: " + str(epoch))
+        plt.rcParams["figure.figsize"] = (10,10)
+        heatmap = plt.pcolor(cm, cmap=plt.cm.Blues)
+        show_values(heatmap)
+        
+        plt.xticks(np.arange(len(mbti_labels)), mbti_labels)
+        plt.yticks(np.arange(len(mbti_labels)), mbti_labels)
+        plt.title("MBTI Prediction Confusion Matrix -- Epoch " + str(epoch + 1))
+        # plt.show()
+
+        plt.savefig('../data/confusion-matrices/epoch' + str(epoch+1) + ".png")
+        plt.close()
+
+        # dist = {}
+        # for p in sess.run(predict, feed_dict={x: test_X, y: test_y}):
+        #     if dist.get(d[p]) is None:
+        #         dist[d[p]] = 0
+        #     dist[d[p]] += 1
+        # print dist
+        
+
 
         print("Epoch = %d, train accuracy = %.2f%%, test accuracy = %.2f%%"
               % (epoch + 1, 100. * train_accuracy, 100. * test_accuracy))
