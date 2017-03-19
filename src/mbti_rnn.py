@@ -24,7 +24,7 @@ python mbti_rnn.py /afs/ir.stanford.edu/users/a/k/akma327/cs224n/project/mbti-ne
 """
 
 GLOVE_DIMENSION = 50
-MAX_SEQ_LEN = 240
+MAX_SEQ_LEN = 120
 
 
 def prep_data(DATA_FILE, PERCENTAGE_TRAIN):
@@ -103,7 +103,7 @@ def mbti_rnn(DATA_FILE, PERCENTAGE_TRAIN=0.7):
 	x_size = train_x.shape[1]
 	h_size = 50                # Number of hidden nodes
 	y_size = train_y.shape[1]   # Number of outcomes
-	batch_size = 1
+	batch_size = 64
 
 	# Symbols
 	# Shape: (batch_size, time, input_size)
@@ -120,7 +120,7 @@ def mbti_rnn(DATA_FILE, PERCENTAGE_TRAIN=0.7):
 	# Split into 'time' tensors of shape (batch, input_size)
 	#x = tf.split(axis=0, num_or_size_splits=MAX_SEQ_LEN, value=x)
 
-	cell = tf.contrib.rnn.BasicLSTMCell(h_size)
+	cell = tf.nn.rnn_cell.BasicLSTMCell(h_size)
 	#cell = tf.nn.rnn_cell.RNNCell
 	# Output shape: (batch, time, output_size)
 	# States shape: (batch, time, hidden_size) -> passed to next timestep
@@ -133,8 +133,6 @@ def mbti_rnn(DATA_FILE, PERCENTAGE_TRAIN=0.7):
 	predict = tf.argmax(yhat, axis=1)
 
 	# Backward propagation
-	print yhat.shape
-	print y.shape
 	cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=yhat))
 	lr = 0.001
 	updates = tf.train.GradientDescentOptimizer(lr).minimize(cost)
@@ -145,15 +143,19 @@ def mbti_rnn(DATA_FILE, PERCENTAGE_TRAIN=0.7):
 	sess.run(init)
 
 	print "Right before first epoch!"
-	for epoch in range(100):
+	training_accuracies = []
+	test_accuracies = []
+	for epoch in range(2500):
 		# Train with each example
 	  for i in range(0, len(train_x), batch_size):
 	  	sess.run(updates, feed_dict={x: train_x[i: i + batch_size], y: train_y[i: i + batch_size]})
 
 	  train_accuracy = np.mean(np.argmax(train_y, axis=1) ==
 	                           sess.run(predict, feed_dict={x: train_x, y: train_y}))
+	  training_accuracies.append(train_accuracy)
 	  preds = sess.run(predict, feed_dict={x: test_x, y: test_y})
 	  test_accuracy  = np.mean(np.argmax(test_y, axis=1) == preds)
+	  test_accuracies.append(test_accuracy)
 	  labels = []
 	  for i in range(len(test_y)):
 	    for j in range(len(test_y[i])):
@@ -175,11 +177,14 @@ def mbti_rnn(DATA_FILE, PERCENTAGE_TRAIN=0.7):
 	  plt.title("MBTI Prediction Confusion Matrix -- Epoch " + str(epoch + 1))
 	  # plt.show()
 
-	  plt.savefig('../data/rnn_confusion-matrices/epoch' + str(epoch+1) + ".png")
+	  plt.savefig('../data/rnn_confusion-matrices-batch-64-seqlen-120-epochs-500/' + str(epoch+1) + ".png")
 	  plt.close()
 
 	  print("Epoch = %d, train accuracy = %.2f%%, test accuracy = %.2f%%"
 	        % (epoch + 1, 100. * train_accuracy, 100. * test_accuracy))
+
+	  print training_accuracies
+	  print test_accuracies
 
 	sess.close()
 
@@ -187,3 +192,4 @@ def mbti_rnn(DATA_FILE, PERCENTAGE_TRAIN=0.7):
 if __name__ == '__main__':
 	(DATA_FILE, PERCENTAGE_TRAIN) = (sys.argv[1], float(sys.argv[2]))
 	mbti_rnn(DATA_FILE, PERCENTAGE_TRAIN)
+
